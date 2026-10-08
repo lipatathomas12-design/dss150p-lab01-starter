@@ -1,76 +1,93 @@
-import os
-import json
+import sys
+import warnings
+from pathlib import Path
 import pandas as pd
 
-def profile_file(file_path, file_type="csv"):
-    print(f"\n==========================================")
-    print(f"PROFILING: {file_path}")
-    print(f"==========================================")
-    
-    if not os.path.exists(file_path):
-        print(f"Error: File not found at {file_path}")
-        return
+warnings.filterwarnings("ignore", category=UserWarning)  # hide date-format guess warnings
 
-    size_bytes = os.path.getsize(file_path)
-    size_kb = size_bytes / 1024
-    print(f"File Size: {size_bytes} bytes ({size_kb:.2f} KB)")
+# Folder with the raw files. Optional: pass another folder as an argument.
+RAW = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/raw")
 
-    try:
-        if file_type == "csv":
-            df = pd.read_csv(file_path)
-        elif file_type == "json":
-            # Read JSON safely (handles standard record/orient JSONs)
-            df = pd.read_json(file_path)
-        elif file_type == "parquet":
-            df = pd.read_parquet(file_path)
-        else:
-            print("Unsupported format.")
-            return
-    except Exception as e:
-        print(f"Failed to read file: {e}")
-        return
 
-    rows, cols = df.shape
-    print(f"Rows: {rows} | Columns: {cols}")
-    print(f"Columns: {list(df.columns)}")
+def make_hashable(df):
+    """Nested values (dicts/lists) can't be counted by pandas.
+    This returns a COPY where they are turned into text. The original is untouched."""
+    out = df.copy()
+    for col in out.columns:
+        if out[col].map(lambda v: isinstance(v, (dict, list))).any():
+            out[col] = out[col].astype(str)
+    return out
 
-    print("\n--- Column Details (Type & Nulls) ---")
+
+def find_date_columns(df):
+    """Treat a text column as date-like only if >=80% of its non-null values parse as dates."""
+    date_cols = []
     for col in df.columns:
-        null_count = df[col].isnull().sum()
-        dtype = df[col].dtype
-        print(f"  - {col}: type = {dtype}, missing values = {null_count}")
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            date_cols.append(col)
+        elif pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object":
+            sample = df[col].dropna().astype(str)
+            if sample.empty:
+                continue
+            parsed = pd.to_datetime(sample, errors="coerce", utc=True)
+            if parsed.notna().mean() >= 0.8:
+                date_cols.append(col)
+    return date_cols
 
-   
-    try:
-        temp_df = df.copy()
-        for col in temp_df.columns:
-            if temp_df[col].apply(lambda x: isinstance(x, (dict, list))).any():
-                temp_df[col] = temp_df[col].astype(str)
-        duplicates = temp_df.duplicated().sum()
-        print(f"\nFully Duplicated Rows: {duplicates}")
-    except Exception as e:
-        print(f"\nFully Duplicated Rows: Could not calculate ({e})")
 
-    print("\n--- Distinct Values Count ---")
-    for col in df.columns:
-        try:
-            if df[col].nunique() < 50:
-                print(f"  - {col}: {df[col].nunique()} distinct values")
-        except:
-            pass
+def profile(name, path, df):
+    safe = make_hashable(df)
+    size = path.stat().st_size
 
-    print("\n--- First 5 Records ---")
-    print(df.head())
+    print(f"\n{'=' * 60}\n{name}\n{'=' * 60}")
+    print(f"File size : {size} bytes ({size / 1024:.2f} KB)")
+    print(f"Shape     : {df.shape[0]} rows x {df.shape[1]} columns")
+    print(f"Columns   : {list(df.columns)}")
 
-    print("\n--- Numeric Columns Summary (Min / Max) ---")
-    numeric_cols = df.select_dtypes(include=["number"]).columns
-    if len(numeric_cols) > 0:
-        for col in numeric_cols:
-            print(f"  - {col}: min = {df[col].min()}, max = {df[col].max()}")
+    print("\nData types:")
+    print(df.dtypes.to_string())
+
+    print("\nMissing (null) values per column:")
+    print(df.isnull().sum().to_string())
+
+    print(f"\nFully duplicated rows: {safe.duplicated().sum()}")
+
+    print("\nDistinct values per column:")
+    print(safe.nunique().to_string())
+
+    print("\nFirst 5 records:")
+    print(df.head().to_string())
+
+    numeric = df.select_dtypes(include="number")
+    if not numeric.empty:
+        print("\nNumeric columns - min / max:")
+        print(numeric.agg(["min", "max"]).T.to_string())
+
+    date_cols = find_date_columns(df)
+    if date_cols:
+        print("\nDate/time columns - earliest / latest:")
+        for col in date_cols:
+            parsed = pd.to_datetime(df[col], errors="coerce", utc=True)
+            bad = parsed.isna().sum() - df[col].isna().sum()
+            print(f"  {col}: earliest={parsed.min()}  latest={parsed.max()}  "
+                  f"(unparseable values: {bad})")
     else:
-        print("  No numeric columns found.")
+        print("\nNo date/time columns detected.")
+
+
+def main():
+    sources = {
+        "customers.csv": pd.read_csv,
+        "orders.json": pd.read_json,
+        "products.parquet": pd.read_parquet,
+    }
+    for filename, reader in sources.items():
+        path = RAW / filename
+        if not path.exists():
+            print(f"\n[ERROR] {path} not found. Check the path.")
+            continue
+        profile(filename, path, reader(path))
+
 
 if __name__ == "__main__":
-    profile_file("data/customers.csv", "csv")
-    profile_file("data/orders.json", "json")
-    profile_file("data/products.parquet", "parquet")
+    main()

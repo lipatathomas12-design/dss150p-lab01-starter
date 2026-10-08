@@ -11,5 +11,6 @@
 | **Possible primary business key** | Customer ID | Order ID | Product ID | Record ID / Identifier | Primary Key constraint |
 | **Potential schema-evolution risk** | Column order shifts, missing headers | Nested array changes, extra fields | Type changes, added/dropped columns | Changing JSON payload structure | DDL changes, column drops |
 | **Potential data-quality risk** | Null values, formatting inconsistencies | Malformed JSON, missing attributes | Corruption, binary version mismatch | Timeouts, 5xx server errors, rate limiting[cite: 1] | Constraint violations, stale data |
+**REST API retrieval timestamp (UTC):** 2026-10-08T16:3X:XX+00:00
+Endpoint: https://jsonplaceholder.typicode.com/posts (HTTP 200, application/json; charset=utf-8)
 
-*Note: Retrieval timestamp for the REST API snapshot will be recorded here once pulled.*

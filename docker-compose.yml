@@ -15,3 +15,8 @@ services:
 
 volumes:
   dss150_pg_data:
+
+  container_name: dss150p-postgres
+POSTGRES_USER: dss150p
+POSTGRES_PASSWORD: dss150p_lab
+POSTGRES_DB: dss150p_lab
