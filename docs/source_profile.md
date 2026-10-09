@@ -1,7 +1,7 @@
 # Source Profile Interpretation
 
 ## 1. customers.csv
-- **Size/shape:** 250 rows x 7 columns (about 17.5 KB). All columns are read as text.
+- **Size/shape:** 250 rows x 7 columns (about 17.8 KB). All columns are read as text.
 - **Duplicate risk:** 2 rows are exact copies (C0036 and C0145 each appear twice).
   Also, `customer_id` has only 247 distinct values, so the key is not unique yet.
 - **Conflicting key:** C0090 appears twice with different people (Paolo Aquino vs
@@ -32,7 +32,7 @@
 - **Low-cardinality fields:** `category` and `brand` have 6 values each, which suits
   validation against an allowed list.
 
-  ## 4. REST API (jsonplaceholder.typicode.com/posts)
+## 4. REST API (jsonplaceholder.typicode.com/posts)
 - **Structure:** The top level is a list of 100 flat records, each with `userId`, `id`,
   `title` and `body`. The raw response is saved unchanged in data/raw/api_snapshot.json.
 - **Key:** `id` looks like the business key (1 to 100). Uniqueness should be
@@ -45,10 +45,13 @@
 - **Stability risk:** This is a public third-party service with no schema guarantee
   or SLA, so it could change or be unavailable.
 
-  ## 5. PostgreSQL (table: support_tickets)
+## 5. PostgreSQL (table: support_tickets)
 - **Structure:** 1 table, 8 columns, 250 rows. Types are integer (`ticket_id`),
   varchar (`customer_id`, `category`, `priority`, `assigned_agent`, `status`) and
   timestamp without time zone (`opened_at`, `resolved_at`).
+- **Keys and constraints:** `ticket_id` is the primary key (INTEGER). There are no
+  CHECK or foreign-key constraints, so the database does not stop invalid
+  `status`, `priority` or `customer_id` values.
 - **Nullable fields:** `assigned_agent` and `resolved_at` are nullable. Everything
   else is NOT NULL. 4 tickets are unassigned (assigned_agent is NULL).
 - **Business meaning of NULLs:** `resolved_at` is empty for tickets still Open or
@@ -60,7 +63,3 @@
   the CSV are cleaned.
 - **Categories:** `category` has 5 values (Account 60, Product 51, Delivery 49,
   Billing 47, Technical 43), which suits an allowed-values check.
-  - **Keys and constraints:** `ticket_id` is the primary key (INTEGER). There are no
-  CHECK or foreign-key constraints, so the database does not stop invalid
-  `status`, `priority` or `customer_id` values.
-- **Row count:** 250 rows.

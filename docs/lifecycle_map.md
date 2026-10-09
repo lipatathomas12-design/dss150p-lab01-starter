@@ -1,23 +1,18 @@
-## Lifecycle Table
-
-| Lifecycle Element | What It Mean | Example in This Lab | Primary Tool/Asset | Possible Failures |
+| Lifecycle Element | What It Means | Example in This Lab | Primary Tool/Artifact | Possible Failure |
 | :--- | :--- | :--- | :--- | :--- |
-| **Source system** | Origin points where raw data is generated or captured | `customers.csv`, `orders.json`, `products.parquet`, REST API, PostgreSQL | File system, External API, Database | Missing files, API timeouts, schema drift |
-| **Storage** | Persistence layers where raw or processed data lands | Local directories (`/data`), PostgreSQL database tables (`dss150_db`) | Docker volumes, PostgreSQL, Local disk | Disk space limits, connection refused errors |
-| **Processing/Transformation** | Cleaning, parsing, restructuring, and reshaping data | Profiling scripts (`src/profile_sources.py`), JSON parsing | Python, Pandas, SQLAlchemy | Type conversion errors, `NameError`, out-of-memory errors |
-| **Data quality/validation** | Checking constraints, nullability, formats, and business rules | Data contract rules (`docs/data_contract.yaml`), `CHECK` constraints | YAML, SQL constraints | Unhandled nulls, duplicate keys, violating domain ranges |
-| **Delivery** | Moving data or schemas to targets or tables for consumption | Deploying schemas via SQL (`create_schema.sql`), loading database tables | PostgreSQL, SQL scripts | Constraint violations during insertion |
-| **Consumer** | End users, dashboards, or applications that use the data | Downstream analysts, business reporting teams, applications | BI tools, Python apps, Data Analysts | Misinterpreted schemas, bad data leading to flawed analytics |
+| **Source system** | Where data is created or captured | `customers.csv`, `orders.json`, `products.parquet`, the REST API, PostgreSQL | File system, external API, database | Missing files, API timeouts, schema drift |
+| **Ingestion/acquisition** | Pulling data from each source into the pipeline | Reading the CSV, JSON and Parquet files, an HTTP GET to the REST API, a SQL query to PostgreSQL | pandas, requests, SQLAlchemy | Missing files, API timeouts, connection refused, wrong paths |
+| **Storage** | Where raw or processed data is kept | Local folder `data/raw/`, PostgreSQL database `dss150p_lab` | Docker volume, PostgreSQL, local disk | Disk space limits, connection refused |
+| **Processing/transformation** | Cleaning, parsing and reshaping data | `src/profile_sources.py`, flattening the nested `shipping` JSON | Python, pandas | Type conversion errors, out-of-memory errors |
+| **Data quality/validation** | Checking constraints, nulls, formats and business rules | Data contract rules in `docs/data_contract.yaml`, `CHECK` constraints in `sql/01_create_schema.sql` | YAML, SQL constraints | Unhandled nulls, duplicate keys, values outside allowed ranges |
+| **Delivery** | Moving data or schemas to the target for use | Creating the `lab.customers` table with `sql/01_create_schema.sql` | PostgreSQL, SQL scripts | Constraint violations during insertion |
+| **Consumer** | Who uses the data | Downstream analysts, reporting teams, applications | BI tools, Python apps | Misread schemas, bad data leading to wrong reports |
 
----
-
-## Data Flow Diagram
 
 ```text
-[ CSV Source ] ----+
-                   |
-[ JSON Source ] ---+---> [ Pipeline Process ] ---> [ Storage / Destination ] ---> [ Downstream Analyst ]
-                   |      (Python / Pandas)         (PostgreSQL Database)          (Business Consumer)
-[ Parquet Source ]-+
-                   |
-[ REST API ] ------+
+[ CSV Source ]      ----+
+[ JSON Source ]     ----+
+[ Parquet Source ]  ----+--->  [ Pipeline Process ]  --->  [ Storage / Destination ]  --->  [ Downstream Analyst ]
+[ REST API ]        ----+      (Python / pandas)           (PostgreSQL database)             (Application consumer)
+[ PostgreSQL ]      ----+
+```

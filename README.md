@@ -1,8 +1,8 @@
 # DSS150P Laboratory Activity #1: Data Engineering Lifecycle Workspace
 
-**Name:** [Thomas Walter Lipata]
-**Student Number:** [2024109933]
-**Section:** [CM17]
+**Name:** Thomas Walter Lipata
+**Student Number:** 2024109933
+**Section:** CM17
 
 ## Purpose
 Set up a reproducible local data-engineering workspace (Python, Git, Docker, PostgreSQL),
@@ -49,6 +49,27 @@ schema and data contract for one source (customers.csv).
 ## AI Usage
 I used Claude (Anthropic) to help draft the profiling, API and schema scripts, the
 data contract, and to explain error messages. I ran every script myself, checked the
-output against the real data files, and changed the wording of the documents. [Edit this
-paragraph so it says exactly what you did. You must be able to explain every line of code.]
+output against the real data files, and changed the wording of the documents.## How to Reproduce (Windows PowerShell, run from the repository root)
+1. Create and activate the virtual environment, then install the packages:
+```
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+```
+2. Start PostgreSQL and confirm it is running:
+```
+   docker compose up -d
+   docker ps
+```
+3. Load the instructor's sample table and apply the schema:
+```
+   Get-Content sql\seed_support_tickets.sql | docker exec -i dss150p-postgres psql -U dss150p -d dss150p_lab
+   Get-Content sql\01_create_schema.sql | docker exec -i dss150p-postgres psql -U dss150p -d dss150p_lab
+```
+4. Run the scripts:
+```
+   python src/verify_environment.py
+   python src/profile_sources.py
+   python src/inspect_api.py
+```
 I also Used Google gemini to start up my project.
