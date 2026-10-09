@@ -1,22 +1,15 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
-    container_name: dss150-postgres
+    container_name: dss150p-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: dss150p_pass
-      POSTGRES_DB: dss150_db
+      POSTGRES_USER: dss150p
+      POSTGRES_PASSWORD: dss150p_lab
+      POSTGRES_DB: dss150p_lab
     ports:
       - "5432:5432"
     volumes:
-      - dss150_pg_data:/var/lib/postgresql/data
+      - dss150p_pgdata:/var/lib/postgresql/data
 
 volumes:
-  dss150_pg_data:
-
-  container_name: dss150p-postgres
-POSTGRES_USER: dss150p
-POSTGRES_PASSWORD: dss150p_lab
-POSTGRES_DB: dss150p_lab
+  dss150p_pgdata:

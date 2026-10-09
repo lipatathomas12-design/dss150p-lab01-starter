@@ -1,22 +1,11 @@
 from sqlalchemy import create_engine, text
 
-# Connection URL matching your docker-compose.yml configuration
-DATABASE_URL = "postgresql://postgres:dss150p_pass@localhost:5432/dss150_db"
+# Must match the values in docker-compose.yml
+# Format: postgresql+psycopg2://USER:PASSWORD@HOST:PORT/DATABASE
+engine = create_engine(
+    "postgresql+psycopg2://dss150p:dss150p_lab@localhost:5432/dss150p_lab"
+)
 
-def verify_connection():
-    try:
-        engine = create_engine(DATABASE_URL)
-        with engine.connect() as connection:
-            # Execute required queries
-            version_result = connection.execute(text("SELECT version();")).scalar()
-            db_result = connection.execute(text("SELECT current_database();")).scalar()
-            
-            print("--- PostgreSQL Connection Successful! ---")
-            print(f"Database Version: {version_result}")
-            print(f"Current Database: {db_result}")
-    except Exception as e:
-        print(f"Connection failed: {e}")
-
-if __name__ == "__main__":
-    verify_connection()
-    
+with engine.connect() as conn:
+    print(conn.execute(text("SELECT version();")).scalar())
+    print(conn.execute(text("SELECT current_database();")).scalar())

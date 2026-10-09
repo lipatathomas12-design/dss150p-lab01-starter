@@ -44,3 +44,23 @@
   break naive CSV exports or line-based processing.
 - **Stability risk:** This is a public third-party service with no schema guarantee
   or SLA, so it could change or be unavailable.
+
+  ## 5. PostgreSQL (table: support_tickets)
+- **Structure:** 1 table, 8 columns, 250 rows. Types are integer (`ticket_id`),
+  varchar (`customer_id`, `category`, `priority`, `assigned_agent`, `status`) and
+  timestamp without time zone (`opened_at`, `resolved_at`).
+- **Nullable fields:** `assigned_agent` and `resolved_at` are nullable. Everything
+  else is NOT NULL. 4 tickets are unassigned (assigned_agent is NULL).
+- **Business meaning of NULLs:** `resolved_at` is empty for tickets still Open or
+  In Progress. This is expected, not bad data, and it should not be filled in.
+- **Time zone risk:** The timestamps have no time zone, so the zone must be
+  confirmed before comparing them with the UTC timestamps in the API or JSON data.
+- **Link to other sources:** `customer_id` (e.g. C0246) uses the same format as
+  customers.csv and orders.json, so it can be joined once the key problems in
+  the CSV are cleaned.
+- **Categories:** `category` has 5 values (Account 60, Product 51, Delivery 49,
+  Billing 47, Technical 43), which suits an allowed-values check.
+  - **Keys and constraints:** `ticket_id` is the primary key (INTEGER). There are no
+  CHECK or foreign-key constraints, so the database does not stop invalid
+  `status`, `priority` or `customer_id` values.
+- **Row count:** 250 rows.

@@ -1,0 +1,55 @@
+dataset_name: customers
+version: "1.0"
+owner: "unknown - requires source owner confirmation"
+source_type: file
+source_format: csv
+acquisition_method: "Local file read with pandas.read_csv from data/raw/customers.csv"
+expected_update_pattern: "Batch file drop (assumed from the source inventory; requires source owner confirmation)"
+primary_key: customer_id
+
+schema:
+  - name: customer_id
+    type: string
+    nullable: false
+    description: "Customer business key, format C followed by 4 digits (e.g. C0001)."
+  - name: first_name
+    type: string
+    nullable: false
+    description: "Customer first name."
+  - name: last_name
+    type: string
+    nullable: false
+    description: "Customer last name."
+  - name: email
+    type: string
+    nullable: true
+    description: "Customer email address. 3 of 250 rows are missing it in the profiled file."
+  - name: city
+    type: string
+    nullable: true
+    description: "Customer city. 2 of 250 rows are missing it in the profiled file."
+  - name: signup_date
+    type: date
+    nullable: false
+    description: "Signup date in ISO format YYYY-MM-DD. Profiled range 2025-01-04 to 2026-05-16."
+  - name: customer_segment
+    type: string
+    nullable: false
+    description: "Customer segment. Observed values: Professional, Retail, SME, Student."
+
+quality_rules:
+  - "customer_id must not be null."
+  - "customer_id must be unique. Profiling currently FAILS this rule: 247 distinct values in 250 rows (C0036 and C0145 are exact duplicates; C0090 appears with two different people)."
+  - "customer_id must match the pattern ^C[0-9]{4}$."
+  - "customer_segment must be one of: Professional, Retail, SME, Student."
+  - "signup_date must be a valid date in YYYY-MM-DD format."
+  - "email, when present, must contain an @ character."
+
+freshness_expectation: "unknown - requires source owner confirmation"
+duplicate_policy: "Proposed: drop rows that are exact copies of another row. A repeated customer_id with different details (C0090) must NOT be resolved silently; quarantine it and report it to the source owner."
+schema_evolution_policy: "Proposed: new columns are allowed and logged; a renamed, removed or retyped column must fail the pipeline until the contract is updated."
+consumer: "Downstream analysts and reporting users (from the lifecycle map); exact consumers require source owner confirmation."
+notes:
+  - "Profiled file: 250 rows x 7 columns. All columns are read as text from the CSV."
+  - "Email and city missing-value thresholds are unknown and require source owner confirmation. Observed rates: email 1.2%, city 0.8%."
+  - "orders.json contains 5 orders whose customer_id is not in customers.csv (orphan records). To be raised with the source owner."
