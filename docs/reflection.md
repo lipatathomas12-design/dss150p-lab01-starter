@@ -1,0 +1,11 @@
+**1. Which source would be easiest to integrate into a future pipeline, and why?**
+I think products.parquet is the easiest. When I profiled it, it had 200 rows, no missing values, no duplicate rows, and every product_id was different. It also keeps its own data types, like float64 for price and int32 for stock, so I did not have to guess what each column was. The CSV and JSON files store most things as plain text, which means more guessing and more cleaning.
+
+**2. Which source presents the greatest schema or data-quality risk, and what evidence supports your answer?**
+customers.csv worried me the most. It has 250 rows but only 247 different customer_id values. Two of the repeats (C0036 and C0145) are exact copies, so those are easy to drop. C0090 is harder, because the same ID belongs to two different people, Paolo Aquino and Hannah Reyes, and nobody can tell which one is right without asking the owner. The file also has 3 missing emails and 2 missing cities. orders.json has its own problem: 5 orders use a customer_id that is not in customers.csv.
+
+**3. What could go wrong if a pipeline is built before the source schema and contract are understood?**
+A pipeline built too early could load the wrong customer, or crash halfway because of a duplicate key, like it would have with my lab.customers table. The nested shipping field in orders.json would not fit into a normal table without flattening it first. The REST API gave me placeholder posts that cannot be joined to anything, so a pipeline that trusted it would produce nonsense. The timestamps in orders and support tickets have no time zone, which could cause wrong comparisons. Without a contract, nobody would know what counts as a failure.
+
+**4. How do Git, virtual environments, containers, and documentation improve reproducibility?**
+Git saves each step, so I can go back if something breaks. The virtual environment and requirements.txt keep the same Python packages for everyone. Docker gives everyone the same PostgreSQL setup. I saw why this matters when my container would not start: an old container with the same name and an outdated docker-compose file were in the way, and I only fixed it by cleaning up and following the file exactly. Documentation like the README and the data contract lets someone else repeat my steps without asking me.
